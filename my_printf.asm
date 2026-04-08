@@ -2,12 +2,14 @@ section .text
 
 global my_printf
 
+;rdi, rsi, rdx, rcx, r8, r9
+
 my_printf:
-    mov eax, 4
-    mov ebx, 1
-    mov ecx, Msg
-    mov edx, Len
-    int 80h
+    mov rax, 1
+    mov rsi, rdi        ;rdi = first arg
+    mov rdi, 1          ;stdout
+    mov rdx, Len
+    syscall             ;printing phrase
 
     ret
 
