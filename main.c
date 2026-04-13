@@ -7,5 +7,5 @@ int main ()
 {
     printf ("Hello there\n\n");
 
-    my_printf ("My name is Giovanni Giorgio\n");
+    my_printf ("Myname is Giovanni Giorgio, but everybody calls me Giorgio\n");
 }
