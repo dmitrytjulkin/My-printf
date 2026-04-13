@@ -7,5 +7,5 @@ int main ()
 {
     printf ("Hello there\n\n");
 
-    MyPrintf ("Say smth cool in 3 chars: %c~~~\n", 'D');
+    MyPrintf ("Say smth cool in 3 chars: %c%c%c%c%c%c%c%c%c%c~~~\n", 'G', 'U', 'C', 'c', 'i', 'P', 'r', 'a', 'd', 'a');
 }

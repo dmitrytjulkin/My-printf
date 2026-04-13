@@ -5,39 +5,35 @@ global MyPrintf
 ;rdi, rsi, rdx, rcx, r8, r9
 
 MyPrintf:
-    call ParseStr
-
-;    mov rdx, rax        ;rdx = strlen
-;    mov rax, 1          ;write syscall
-;    mov rsi, rdi        ;rdi = first arg
-;    mov rdi, 1          ;stdout
-;    syscall             ;printing phrase
-
-    ret
-;________________________________________________________________
-
-;________________________________________________________________
-ParseStr:
     dec rdi
     xor rbx, rbx
+    xor r10, r10            ;specifiers counter
+    dec r10
 
 repeat_to_the_end:
     inc rdi
     mov bl, [rdi]
 
-    cmp bl, 25h                        ;the  '%'
-    jne print_as_usual
+    cmp bl, 25h             ;the  '%'
+    jne print_just_symbol
 
+    inc r10
     inc rdi
-    mov bl, [rdi]                      ;the next symbol
+    mov bl, [rdi]           ;the next symbol
 
-    cmp bl, 63h                        ; the 'c'
+    cmp bl, 63h             ; the 'c'
     jne print_non_char
     call ParseChar
     jmp finish_cycle_step
 print_non_char:
 
-print_as_usual:
+    cmp bl, 73h             ; the 's'
+    jne print_non_string
+;    call ParseString
+    jmp finish_cycle_step
+print_non_string:
+
+print_just_symbol:
     call SymbolOutput
 
 finish_cycle_step:
@@ -53,14 +49,16 @@ finish_cycle_step:
 SymbolOutput:
     push rdi
     push rsi
-    push rdx            ;save regs values
+    push rdx                ;save regs values
+    push rcx
 
-    mov rax, 1          ;write syscall
-    mov rsi, rdi        ;rsi - char to print
-    mov rdx, 1          ;rdx = strlen
-    mov rdi, 1          ;stdout
-    syscall             ;printing symbol
+    mov rax, 1              ;write syscall
+    mov rsi, rdi            ;rsi - char to print
+    mov rdx, 1              ;rdx = strlen
+    mov rdi, 1              ;stdout
+    syscall                 ;printing symbol
 
+    pop rcx
     pop rdx
     pop rsi
     pop rdi
@@ -72,13 +70,59 @@ SymbolOutput:
 ParseChar:
     push rdi
 
-    mov [reg_val], rsi
-    mov rdi, reg_val                   ;print 2nd argument
+    call ChooseRegToParse
+    mov [reg_val], al
+    mov rdi, reg_val        ;print 2nd argument
     call SymbolOutput
 
     pop rdi
 
     ret
+;________________________________________________________________
+
+;r10 contains count specifiers that was passed
+;________________________________________________________________
+ChooseRegToParse:
+    cmp r10, 0
+    jne not_rsi
+    mov rax, rsi
+    jmp go_ret
+not_rsi:
+
+    cmp r10, 1
+    jne not_rdx
+    mov rax, rdx
+    jmp go_ret
+not_rdx:
+
+    cmp r10, 2
+    jne not_rcx
+    mov rax, rcx
+    jmp go_ret
+not_rcx:
+
+    cmp r10, 3
+    jne not_r8
+    mov rax, r8
+    jmp go_ret
+not_r8:
+
+    cmp r10, 4
+    jne not_r9
+    mov rax, r9
+    jmp go_ret
+not_r9:
+
+    pop rcx             ;ret for ChooseRegToParse
+    pop rdx             ;ret for ParseChar
+    pop rax             ;our argument
+
+    push rdx
+    push rcx
+
+go_ret:
+    ret
+
 ;________________________________________________________________
 
 section .data
