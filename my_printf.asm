@@ -5,6 +5,10 @@ global MyPrintf
 ;rdi, rsi, rdx, rcx, r8, r9
 
 MyPrintf:
+    push rbp
+    mov rbp, rsp            ;rbp for addressing to args
+    add rbp, 16
+
     dec rdi
     xor rbx, rbx
     xor r10, r10            ;specifiers counter
@@ -40,7 +44,7 @@ finish_cycle_step:
     cmp rbx, 0
     jne repeat_to_the_end
 
-;    mov rax, rdi
+    pop rbp
 
     ret
 ;________________________________________________________________
@@ -113,12 +117,8 @@ not_r8:
     jmp go_ret
 not_r9:
 
-    pop rcx             ;ret for ChooseRegToParse
-    pop rdx             ;ret for ParseChar
-    pop rax             ;our argument
-
-    push rdx
-    push rcx
+    mov rax, [rbp]
+    add rbp, 8
 
 go_ret:
     ret
@@ -126,9 +126,6 @@ go_ret:
 ;________________________________________________________________
 
 section .data
-    Msg     db "Hello, world!!", 0
-    Len     equ $ - Msg
-
     reg_val db 0, NEW_LINE
 
     NEW_LINE    equ 0Ah
