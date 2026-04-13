@@ -19,7 +19,7 @@ repeat_to_the_end:
     mov bl, [rdi]
 
     cmp bl, 25h             ;the  '%'
-    jne print_just_symbol
+    jne print_usual_symbol
 
     inc r10
     inc rdi
@@ -33,15 +33,15 @@ print_non_char:
 
     cmp bl, 73h             ; the 's'
     jne print_non_string
-;    call ParseString
+    call ParseString
     jmp finish_cycle_step
 print_non_string:
 
-print_just_symbol:
+print_usual_symbol:
     call SymbolOutput
 
 finish_cycle_step:
-    cmp rbx, 0
+    cmp bl, 0
     jne repeat_to_the_end
 
     pop rbp
@@ -49,6 +49,10 @@ finish_cycle_step:
     ret
 ;________________________________________________________________
 
+;       SymbolOutput
+;Prints one symbol which rdi address to.
+;Entry: rdi - address of the symbol
+;Destr: rax
 ;________________________________________________________________
 SymbolOutput:
     push rdi
@@ -84,7 +88,34 @@ ParseChar:
     ret
 ;________________________________________________________________
 
-;r10 contains count specifiers that was passed
+;________________________________________________________________
+ParseString:
+    push rdi
+    push rbx
+
+    call ChooseRegToParse
+    mov rdi, rax
+    dec rdi
+
+print_string:
+    inc rdi
+    call SymbolOutput
+    mov bl, [rdi]
+    cmp bl, 0
+    jne print_string
+
+    pop rbx
+    pop rdi
+
+    ret
+
+;________________________________________________________________
+
+;       ChooseRegToParse
+;Returns by rax value of the unused argument. For this, r10 contains count
+;specifiers that was passed.
+;Entry: r10 - count of used arguments
+;Exit: rax - value of first unused argument
 ;________________________________________________________________
 ChooseRegToParse:
     cmp r10, 0
