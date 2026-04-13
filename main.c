@@ -1,11 +1,11 @@
 #include <stdio.h>
 #include <stdarg.h>
 
-extern void my_printf(const char* str);
+extern void MyPrintf(const char* str, ...);
 
 int main ()
 {
     printf ("Hello there\n\n");
 
-    my_printf ("Myname is Giovanni Giorgio, but everybody calls me Giorgio\n");
+    MyPrintf ("Say smth cool in 3 chars: %c~~~\n", 'D');
 }

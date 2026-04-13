@@ -1,42 +1,82 @@
 section .text
 
-global my_printf
+global MyPrintf
 
 ;rdi, rsi, rdx, rcx, r8, r9
 
-my_printf:
-    call str_len
+MyPrintf:
+    call ParseStr
 
-    mov rdx, rax        ;rdx = strlen
-    mov rax, 1          ;write syscall
-    mov rsi, rdi        ;rdi = first arg
-    mov rdi, 1          ;stdout
-    syscall             ;printing phrase
+;    mov rdx, rax        ;rdx = strlen
+;    mov rax, 1          ;write syscall
+;    mov rsi, rdi        ;rdi = first arg
+;    mov rdi, 1          ;stdout
+;    syscall             ;printing phrase
 
     ret
 ;________________________________________________________________
 
 ;________________________________________________________________
-str_len:
-    xor rdx, rdx
-    dec rdx
+ParseStr:
+    dec rdi
     xor rbx, rbx
 
-repeat:
-    inc rdx
-    mov bl, [rdi + rdx]
-    mov [reg_val], bl
+repeat_to_the_end:
+    inc rdi
+    mov bl, [rdi]
 
-;    mov rax, 1
-;    mov rdi, 1
-;    mov rsi, reg_val
-;    mov rdx, 2
-;    syscall             ;printing val of rbx
+    cmp bl, 25h                        ;the  '%'
+    jne print_as_usual
 
+    inc rdi
+    mov bl, [rdi]                      ;the next symbol
+
+    cmp bl, 63h                        ; the 'c'
+    jne print_non_char
+    call ParseChar
+    jmp finish_cycle_step
+print_non_char:
+
+print_as_usual:
+    call SymbolOutput
+
+finish_cycle_step:
     cmp rbx, 0
-    jne repeat
+    jne repeat_to_the_end
 
-    mov rax, rdx
+;    mov rax, rdi
+
+    ret
+;________________________________________________________________
+
+;________________________________________________________________
+SymbolOutput:
+    push rdi
+    push rsi
+    push rdx            ;save regs values
+
+    mov rax, 1          ;write syscall
+    mov rsi, rdi        ;rsi - char to print
+    mov rdx, 1          ;rdx = strlen
+    mov rdi, 1          ;stdout
+    syscall             ;printing symbol
+
+    pop rdx
+    pop rsi
+    pop rdi
+
+    ret
+;________________________________________________________________
+
+;________________________________________________________________
+ParseChar:
+    push rdi
+
+    mov [reg_val], rsi
+    mov rdi, reg_val                   ;print 2nd argument
+    call SymbolOutput
+
+    pop rdi
 
     ret
 ;________________________________________________________________
