@@ -24,10 +24,6 @@ repeat_to_the_end:
     cmp bl, 25h             ;the  '%'
     jne print_usual_symbol
 
-    push rsi
-
-    pop rsi
-
     inc r10
     inc rsi
     mov bl, [rsi]           ;the next symbol
@@ -35,9 +31,6 @@ repeat_to_the_end:
     cmp bl, 63h             ; the 'c'
     jne print_non_char
     call ParseChar
-    cmp r12, BUF_CAPACITY
-    jl finish_cycle_step
-    call BufferOutput
     jmp finish_cycle_step
 print_non_char:
 
@@ -49,13 +42,15 @@ print_non_string:
 
 print_usual_symbol:
     movsb
+
     inc r12
 
+finish_cycle_step:
     cmp r12, BUF_CAPACITY
-    jl finish_cycle_step
+    jl skip_printing
     call BufferOutput
 
-finish_cycle_step:
+skip_printing:
     cmp bl, 0
     jne repeat_to_the_end
 
@@ -96,13 +91,12 @@ BufferOutput:
 
 ;________________________________________________________________
 ParseChar:
-    push rsi
-
     call ChooseRegToParse
-    mov [reg_val], al
-    mov rsi, reg_val        ;print 2nd argument
-
-    pop rsi
+;    stosb
+    mov [rdi], al
+    inc rdi
+    inc r12
+    inc rsi                 ;skip printing 'c' in "%c"
 
     ret
 ;________________________________________________________________
@@ -180,9 +174,9 @@ not_r9:
 go_ret:
     ret
 ;________________________________________________________________
-PrintDebugLine
+PrintDebugLine:
     push rdi
-    pudh rsi
+    push rsi
     push rdx
     push rcx
 
