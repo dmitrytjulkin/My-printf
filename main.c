@@ -8,7 +8,8 @@ int main ()
     printf ("Hello there\n\n");
 
     // MyPrintf ("Hello, my dear friend\n");
-    // MyPrintf ("BB %c%c %c%c%c%c%c\n", 'n', 'o', 'm', 'o', 'n', 'e', 'y');
+    // MyPrintf("%s,soooooooooo\n %s", "ahahahaha", "suiiiii");
+    MyPrintf ("%c%c%c%c%c%c%c%c%c\n", 'b', 'b', 'n', 'o', 'm', 'o', 'n', 'e', 'y');
     // MyPrintf ("Abacaba%sdabacaba %s \n", "gimmie", "gimme gimmy");
-    MyPrintf ("Say %c%c %s \n%s~~~\n\n", 'm', 'y', "name", "yo, bro");
+    // MyPrintf ("Say %c%c %s \n%s~~~\n\n", 'm', 'y', "name", "yo, bro");
 }

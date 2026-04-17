@@ -138,41 +138,34 @@ end_parsing_string:
 ;Exit: rax - value of first unused argument
 ;________________________________________________________________
 ChooseRegToParse:
-    cmp r10, 0
-    jne not_rsi
-    mov rax, r13
-    jmp go_ret
-not_rsi:
-
-    cmp r10, 1
-    jne not_rdx
-    mov rax, rdx
-    jmp go_ret
-not_rdx:
-
-    cmp r10, 2
-    jne not_rcx
-    mov rax, rcx
-    jmp go_ret
-not_rcx:
-
-    cmp r10, 3
-    jne not_r8
-    mov rax, r8
-    jmp go_ret
-not_r8:
-
     cmp r10, 4
-    jne not_r9
-    mov rax, r9
-    jmp go_ret
-not_r9:
+    ja parse_stack_args
+    jmp [jump_table + r10 * 8]
+parse_rsi:
+    mov rax, r13
+    ret
 
+parse_rdx:
+    mov rax, rdx
+    ret
+
+parse_rcx:
+    mov rax, rcx
+    ret
+
+parse_r8:
+    mov rax, r8
+    ret
+
+parse_r9:
+    mov rax, r9
+    ret
+
+parse_stack_args:
     mov rax, [rbp]
     add rbp, 8
-
-go_ret:
     ret
+
 ;________________________________________________________________
 PrintDebugLine:
     push rdi
@@ -195,6 +188,7 @@ PrintDebugLine:
 ;________________________________________________________________
 
 section .data
+    jump_table  dq parse_rsi, parse_rdx, parse_rcx, parse_r8, parse_r9
     reg_val     db 0, NEW_LINE
 
     BUF_CAPACITY equ 01h
