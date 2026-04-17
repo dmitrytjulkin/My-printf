@@ -9,25 +9,35 @@ MyPrintf:
     mov rbp, rsp            ;rbp for addressing to args
     add rbp, 16
 
-    dec rdi
+    mov r11, rsi            ;to use movsw:
+    mov rsi, rdi            ;rsi - sentence
+    mov rdi, buffer         ;rdi - buffer
+
     xor rbx, rbx
+    xor r12, r12            ;buffer size
     xor r10, r10            ;specifiers counter
     dec r10
 
 repeat_to_the_end:
-    inc rdi
-    mov bl, [rdi]
+    mov bl, [rsi]
 
     cmp bl, 25h             ;the  '%'
     jne print_usual_symbol
 
+    push rsi
+
+    pop rsi
+
     inc r10
-    inc rdi
-    mov bl, [rdi]           ;the next symbol
+    inc rsi
+    mov bl, [rsi]           ;the next symbol
 
     cmp bl, 63h             ; the 'c'
     jne print_non_char
     call ParseChar
+    cmp r12, BUF_CAPACITY
+    jl finish_cycle_step
+    call BufferOutput
     jmp finish_cycle_step
 print_non_char:
 
@@ -38,52 +48,61 @@ print_non_char:
 print_non_string:
 
 print_usual_symbol:
-    call SymbolOutput
+    movsb
+    inc r12
+
+    cmp r12, BUF_CAPACITY
+    jl finish_cycle_step
+    call BufferOutput
 
 finish_cycle_step:
     cmp bl, 0
     jne repeat_to_the_end
+
+    call BufferOutput       ;print uncompleted buffer
 
     pop rbp
 
     ret
 ;________________________________________________________________
 
-;       SymbolOutput
+;       BufferOutput
 ;Prints one symbol which rdi address to.
 ;Entry: rdi - address of the symbol
 ;Destr: rax
 ;________________________________________________________________
-SymbolOutput:
-    push rdi
+BufferOutput:
+    push rcx
     push rsi
     push rdx                ;save regs values
-    push rcx
+    push rdi
 
     mov rax, 1              ;write syscall
-    mov rsi, rdi            ;rsi - char to print
-    mov rdx, 1              ;rdx = strlen
+    mov rsi, buffer         ;rsi - buffer to print
+    mov rdx, r12            ;rdx = buf len
     mov rdi, 1              ;stdout
-    syscall                 ;printing symbol
+    syscall                 ;printing buffer
 
-    pop rcx
+    pop rdi
+    sub rdi, r12            ;~ mov rdi, buffer
+    xor r12, r12            ;r12 - buf size
+
     pop rdx
     pop rsi
-    pop rdi
+    pop rcx
 
     ret
 ;________________________________________________________________
 
 ;________________________________________________________________
 ParseChar:
-    push rdi
+    push rsi
 
     call ChooseRegToParse
     mov [reg_val], al
-    mov rdi, reg_val        ;print 2nd argument
-    call SymbolOutput
+    mov rsi, reg_val        ;print 2nd argument
 
-    pop rdi
+    pop rsi
 
     ret
 ;________________________________________________________________
@@ -91,20 +110,27 @@ ParseChar:
 ;________________________________________________________________
 ParseString:
     push rdi
+    push rsi
     push rbx
 
     call ChooseRegToParse
-    mov rdi, rax
-    dec rdi
+    mov rdi, buffer
+    mov rsi, rax
 
 print_string:
-    inc rdi
-    call SymbolOutput
+    movsw
+    inc r12
+    cmp r12, BUF_CAPACITY
+    jne skip_output
+    call BufferOutput
+
+skip_output:
     mov bl, [rdi]
     cmp bl, 0
     jne print_string
 
     pop rbx
+    pop rsi
     pop rdi
 
     ret
@@ -120,7 +146,7 @@ print_string:
 ChooseRegToParse:
     cmp r10, 0
     jne not_rsi
-    mov rax, rsi
+    mov rax, r11
     jmp go_ret
 not_rsi:
 
@@ -153,13 +179,37 @@ not_r9:
 
 go_ret:
     ret
+;________________________________________________________________
+PrintDebugLine
+    push rdi
+    pudh rsi
+    push rdx
+    push rcx
+
+    mov rax, 1              ;write syscall
+    mov rsi, debug_line     ;rsi - buffer to print
+    mov rdx, 5              ;rdx = buf len
+    mov rdi, 1              ;stdout
+    syscall                 ;printing buffer
+
+    pop rcx
+    pop rdx
+    pop rsi
+    pop rdi
+    ret
 
 ;________________________________________________________________
 
 section .data
-    reg_val db 0, NEW_LINE
+    reg_val     db 0, NEW_LINE
+
+    BUF_CAPACITY equ 05h
+    buf_size    db 0
+    buffer      db BUF_CAPACITY dup(0)
 
     NEW_LINE    equ 0Ah
     SPACE       equ 20h
+
+    debug_line  db "BITCH"
 
 section .note.GNU-stack noalloc noexec nowrite progbits
