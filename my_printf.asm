@@ -9,7 +9,7 @@ MyPrintf:
     mov rbp, rsp            ;rbp for addressing to args
     add rbp, 16
 
-    mov r11, rsi            ;to use movsw:
+    mov r13, rsi            ;to use movsw:
     mov rsi, rdi            ;rsi - sentence
     mov rdi, buffer         ;rdi - buffer
 
@@ -42,7 +42,6 @@ print_non_string:
 
 print_usual_symbol:
     movsb
-
     inc r12
 
 finish_cycle_step:
@@ -103,29 +102,30 @@ ParseChar:
 
 ;________________________________________________________________
 ParseString:
-    push rdi
     push rsi
     push rbx
 
     call ChooseRegToParse
-    mov rdi, buffer
     mov rsi, rax
 
 print_string:
-    movsw
+    mov bl, [rsi]
+    cmp bl, 0
+    je end_parsing_string
+
+    movsb
     inc r12
     cmp r12, BUF_CAPACITY
-    jne skip_output
+    jl skip_output
     call BufferOutput
 
 skip_output:
-    mov bl, [rdi]
-    cmp bl, 0
-    jne print_string
+    jmp print_string
 
+end_parsing_string:
     pop rbx
     pop rsi
-    pop rdi
+    inc rsi                 ;avoid printing 's' in "%s"
 
     ret
 
@@ -140,7 +140,7 @@ skip_output:
 ChooseRegToParse:
     cmp r10, 0
     jne not_rsi
-    mov rax, r11
+    mov rax, r13
     jmp go_ret
 not_rsi:
 
@@ -197,7 +197,7 @@ PrintDebugLine:
 section .data
     reg_val     db 0, NEW_LINE
 
-    BUF_CAPACITY equ 05h
+    BUF_CAPACITY equ 01h
     buf_size    db 0
     buffer      db BUF_CAPACITY dup(0)
 
