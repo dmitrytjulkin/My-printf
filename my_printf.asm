@@ -41,14 +41,18 @@ repeat_to_the_end:
 
     parse_char:
     call ParseChar
-    jmp finish_cycle_step
+    jmp break
 
     parse_str:
     call ParseString
-    jmp finish_cycle_step
+    jmp break
 
     parse_dec:
+
     parse_hex:
+    call ParseHex
+    jmp break
+
     parse_oct:
     parse_bin:
 
@@ -56,7 +60,7 @@ repeat_to_the_end:
     movsb
     inc r12
 
-    finish_cycle_step:
+    break:
     cmp r12, BUF_CAPACITY
     jl skip_printing
     call BufferOutput
@@ -127,16 +131,58 @@ print_string:
     movsb
     inc r12
     cmp r12, BUF_CAPACITY
-    jl skip_output
+    jl skip_output_str
     call BufferOutput
+    skip_output_str:
 
-    skip_output:
     jmp print_string
 
     end_parsing_string:
     pop rbx
     pop rsi
     inc rsi                 ;avoid printing 's' in "%s"
+
+    ret
+;________________________________________________________________
+
+ParseHex:
+    push rbx
+    push rcx
+
+    call ChooseRegToParse
+    xor rbx, rbx
+    mov rcx, 8
+    rol rax, 32
+
+build_hex:
+    mov rbx, rax
+    shr rbx, 60
+    rol rax, 4
+
+    cmp rbx, 9
+    ja parse_letter
+    parse_digit:
+    add rbx, 30h
+    jmp next
+    parse_letter:
+    add rbx, 41h - 0Ah
+    next:
+
+    mov [rdi], rbx            ;put symbol in buffer
+    inc rdi
+    inc r12
+    cmp r12, BUF_CAPACITY
+    jl skip_output_hex
+    push rax
+    call BufferOutput       ;choose to print buffer or not
+    pop rax
+    skip_output_hex:
+
+    loop build_hex
+
+    pop rcx
+    pop rbx
+    inc rsi                 ;avoid printing 'd' in "%d"
 
     ret
 
