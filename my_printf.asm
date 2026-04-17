@@ -2,17 +2,28 @@ section .text
 
 global MyPrintf
 
-;rdi, rsi, rdx, rcx, r8, r9
-
 MyPrintf:
     push rbp
     mov rbp, rsp            ;rbp for addressing to args
     add rbp, 16
 
+;Setting jump table for specifiers
+    mov rax, parse_bin
+    mov jmp_spec_table[8 * 62h], rax
+    mov rax, parse_char
+    mov jmp_spec_table[8 * 63h], rax
+    mov rax, parse_dec
+    mov jmp_spec_table[8 * 64h], rax
+    mov rax, parse_oct
+    mov jmp_spec_table[8 * 6fh], rax
+    mov rax, parse_str
+    mov jmp_spec_table[8 * 73h], rax
+    mov rax, parse_hex
+    mov jmp_spec_table[8 * 78h], rax
+
     mov r13, rsi            ;to use movsw:
     mov rsi, rdi            ;rsi - sentence
     mov rdi, buffer         ;rdi - buffer
-
     xor rbx, rbx
     xor r12, r12            ;buffer size
     xor r10, r10            ;specifiers counter
@@ -20,43 +31,43 @@ MyPrintf:
 
 repeat_to_the_end:
     mov bl, [rsi]
-
     cmp bl, 25h             ;the  '%'
-    jne print_usual_symbol
+    jne print_symbol
 
     inc r10
     inc rsi
     mov bl, [rsi]           ;the next symbol
+    jmp [jmp_spec_table + 8 * rbx]
 
-    cmp bl, 63h             ; the 'c'
-    jne print_non_char
+    parse_char:
     call ParseChar
     jmp finish_cycle_step
-print_non_char:
 
-    cmp bl, 73h             ; the 's'
-    jne print_non_string
+    parse_str:
     call ParseString
     jmp finish_cycle_step
-print_non_string:
 
-print_usual_symbol:
+    parse_dec:
+    parse_hex:
+    parse_oct:
+    parse_bin:
+
+    print_symbol:
     movsb
     inc r12
 
-finish_cycle_step:
+    finish_cycle_step:
     cmp r12, BUF_CAPACITY
     jl skip_printing
     call BufferOutput
 
-skip_printing:
+    skip_printing:
     cmp bl, 0
     jne repeat_to_the_end
 
     call BufferOutput       ;print uncompleted buffer
 
     pop rbp
-
     ret
 ;________________________________________________________________
 
@@ -119,10 +130,10 @@ print_string:
     jl skip_output
     call BufferOutput
 
-skip_output:
+    skip_output:
     jmp print_string
 
-end_parsing_string:
+    end_parsing_string:
     pop rbx
     pop rsi
     inc rsi                 ;avoid printing 's' in "%s"
@@ -140,28 +151,29 @@ end_parsing_string:
 ChooseRegToParse:
     cmp r10, 4
     ja parse_stack_args
-    jmp [jump_table + r10 * 8]
-parse_rsi:
+    jmp [jmp_arg_table + r10 * 8]
+
+    parse_rsi:
     mov rax, r13
     ret
 
-parse_rdx:
+    parse_rdx:
     mov rax, rdx
     ret
 
-parse_rcx:
+    parse_rcx:
     mov rax, rcx
     ret
 
-parse_r8:
+    parse_r8:
     mov rax, r8
     ret
 
-parse_r9:
+    parse_r9:
     mov rax, r9
     ret
 
-parse_stack_args:
+    parse_stack_args:
     mov rax, [rbp]
     add rbp, 8
     ret
@@ -188,16 +200,16 @@ PrintDebugLine:
 ;________________________________________________________________
 
 section .data
-    jump_table  dq parse_rsi, parse_rdx, parse_rcx, parse_r8, parse_r9
-    reg_val     db 0, NEW_LINE
+    jmp_spec_table  dq 128 dup(0)
+    jmp_arg_table   dq parse_rsi, parse_rdx, parse_rcx, parse_r8, parse_r9
 
-    BUF_CAPACITY equ 01h
-    buf_size    db 0
-    buffer      db BUF_CAPACITY dup(0)
+    BUF_CAPACITY    equ 05h
+    buf_size        db 0
+    buffer          db BUF_CAPACITY dup(0)
 
-    NEW_LINE    equ 0Ah
-    SPACE       equ 20h
+    NEW_LINE        equ 0Ah
+    SPACE           equ 20h
 
-    debug_line  db "BITCH"
+    debug_line      db "BITCH"
 
 section .note.GNU-stack noalloc noexec nowrite progbits
