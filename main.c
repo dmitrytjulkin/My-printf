@@ -7,7 +7,7 @@ int main ()
 {
     printf ("Hello there\n\n");
 
-    MyPrintf ("%x%x%x%x", 0x1234, 0xdeda, 0xabacaba, 0xbeda);
+    MyPrintf ("%x\n%x\n%x\n", 0x1234, 0xbabe, 0xdadd1);
     // MyPrintf ("Hello, my dear friend\n");
     // MyPrintf("%s,soooooooooo\n %s", "ahahahaha", "suiiiii");
     // MyPrintf ("%c%c%c%c%c%c%c%c%c\n", 'b', 'b', 'n', 'o', 'm', 'o', 'n', 'e', 'y');

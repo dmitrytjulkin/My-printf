@@ -31,7 +31,7 @@ MyPrintf:
 
 repeat_to_the_end:
     mov bl, [rsi]
-    cmp bl, 25h             ;the  '%'
+    cmp bl, '%'
     jne print_symbol
 
     inc r10
@@ -50,6 +50,9 @@ repeat_to_the_end:
     parse_dec:
 
     parse_hex:
+    mov r11, 8              ;max count of digits
+    mov r14, 28             ;the val to shr rbx
+    mov r15, 4              ;the val to rol rax
     call ParseHex
     jmp break
 
@@ -151,24 +154,29 @@ ParseHex:
 
     call ChooseRegToParse
     xor rbx, rbx
-    mov rcx, 8
-    rol rax, 32
+    mov rcx, r11
+    mov rdx, 4
 
 build_hex:
-    mov rbx, rax
-    shr rbx, 60
-    rol rax, 4
+    mov ebx, eax
 
-    cmp rbx, 9
+    push rcx
+    mov rcx, r14
+    shr ebx, cl                 ;leave the first symbol
+    mov rcx, r15
+    rol eax, cl                 ;put second symb on the first place
+    pop rcx
+
+    cmp ebx, 9
     ja parse_letter
     parse_digit:
-    add rbx, 30h
+    add ebx, '0'
     jmp next
     parse_letter:
-    add rbx, 41h - 0Ah
+    add ebx, 'A' - 0Ah
     next:
 
-    mov [rdi], rbx            ;put symbol in buffer
+    mov [rdi], ebx            ;put symbol in buffer
     inc rdi
     inc r12
     cmp r12, BUF_CAPACITY
@@ -182,7 +190,7 @@ build_hex:
 
     pop rcx
     pop rbx
-    inc rsi                 ;avoid printing 'd' in "%d"
+    inc rsi                 ;avoid printing 'x' in "%x"
 
     ret
 
