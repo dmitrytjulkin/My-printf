@@ -53,11 +53,22 @@ repeat_to_the_end:
     mov r11, 8              ;max count of digits
     mov r14, 28             ;the val to shr rbx
     mov r15, 4              ;the val to rol rax
-    call ParseHex
+    call ParseNonDec
     jmp break
 
     parse_oct:
+    mov r11, 11             ;max count of digits
+    mov r14, 29             ;the val to shr rbx
+    mov r15, 3              ;the val to rol rax
+    call ParseNonDec
+    jmp break
+
     parse_bin:
+    mov r11, 32             ;max count of digits
+    mov r14, 31             ;the val to shr rbx
+    mov r15, 1              ;the val to rol rax
+    call ParseNonDec
+    jmp break
 
     print_symbol:
     movsb
@@ -148,7 +159,7 @@ print_string:
     ret
 ;________________________________________________________________
 
-ParseHex:
+ParseNonDec:
     push rbx
     push rcx
 
@@ -157,7 +168,7 @@ ParseHex:
     mov rcx, r11
     mov rdx, 4
 
-build_hex:
+build_non_dec:
     mov ebx, eax
 
     push rcx
