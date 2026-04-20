@@ -2,6 +2,11 @@ section .text
 
 global MyPrintf
 
+;// TODO:
+;// Times instead of dup
+;// Rewrite parsing hex to convinient for oct
+;// Write ParseDec
+
 MyPrintf:
     push rbp
     mov rbp, rsp            ;rbp for addressing to args
@@ -41,10 +46,12 @@ repeat_to_the_end:
 
     parse_char:
     call ParseChar
+    inc rsi                 ;avoid printing 'c' in "%c"
     jmp break
 
     parse_str:
     call ParseString
+    inc rsi                 ;avoid printing 's' in "%s"
     jmp break
 
     parse_dec:
@@ -54,6 +61,7 @@ repeat_to_the_end:
     mov r14, 28             ;the val to shr rbx
     mov r15, 4              ;the val to rol rax
     call ParseNonDec
+    inc rsi                 ;avoid printing 'x' in "%x"
     jmp break
 
     parse_oct:
@@ -68,6 +76,7 @@ repeat_to_the_end:
     mov r14, 31             ;the val to shr rbx
     mov r15, 1              ;the val to rol rax
     call ParseNonDec
+    inc rsi                 ;avoid printing 'b' in "%b"
     jmp break
 
     print_symbol:
@@ -90,9 +99,10 @@ repeat_to_the_end:
 ;________________________________________________________________
 
 ;       BufferOutput
-;Prints one symbol which rdi address to.
-;Entry: rdi - address of the symbol
-;Destr: rax
+;Prints buffer with constant size. Set r12 = 0 and rdi as pointer to buffer.
+;Entry: rdi - pointer to last element,
+;       r12 - elements count in buffer.
+;Destr: rax.
 ;________________________________________________________________
 BufferOutput:
     push rcx
@@ -117,18 +127,32 @@ BufferOutput:
     ret
 ;________________________________________________________________
 
+;       ParseChar
+;Prints symbol to buffer. This symbol is one of printf() arguments.
+;Entry: rdi - current pointer to buffer's element,
+;       r12 - buffer's size,
+;       rsi - pointer to string's (1st printf arg) element,
+;       r10 - count of passed arguments.
+;Exit: rdi, r12.
+;Destr: rax.
 ;________________________________________________________________
 ParseChar:
     call ChooseRegToParse
-;    stosb
-    mov [rdi], al
-    inc rdi
+
+    stosb
     inc r12
-    inc rsi                 ;skip printing 'c' in "%c"
 
     ret
 ;________________________________________________________________
 
+;       ParseString
+;Prints string to buffer. This string is one of printf () arguments
+;(not first).
+;Entry: r10 - number of passed arguments,
+;       rdi - current pointer to buffer's element,
+;       r12 - buffer's size.
+;Exit: rdi, r12.
+;Destr: rax
 ;________________________________________________________________
 ParseString:
     push rsi
@@ -154,11 +178,20 @@ print_string:
     end_parsing_string:
     pop rbx
     pop rsi
-    inc rsi                 ;avoid printing 's' in "%s"
 
     ret
 ;________________________________________________________________
 
+;       ParseNonDec
+;Prints binary or hexagon number to buffer. This number is one of printf()
+;arguments (not first).
+;Entry: r10 - number of passed arguments,
+;       rdi - current pointer to buffer's element,
+;       rsi - pointer to string's (1st printf arg) element,
+;       r12 - buffer's size.
+;Exit: rdi, r12.
+;Destr: rax
+;________________________________________________________________
 ParseNonDec:
     push rbx
     push rcx
@@ -197,11 +230,10 @@ build_non_dec:
     pop rax
     skip_output_hex:
 
-    loop build_hex
+    loop build_non_dec
 
     pop rcx
     pop rbx
-    inc rsi                 ;avoid printing 'x' in "%x"
 
     ret
 
@@ -242,7 +274,11 @@ ChooseRegToParse:
     mov rax, [rbp]
     add rbp, 8
     ret
+;________________________________________________________________
 
+;       PrintDebugLine
+;Prints const string to stdout to understand if program passing this spot or not
+;Destr: rax
 ;________________________________________________________________
 PrintDebugLine:
     push rdi
